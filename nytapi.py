@@ -3,12 +3,6 @@ import hashlib
 import urllib2
 from urllib import quote, quote_plus, urlencode
 
-MOVIE_REVIEWS_KEY = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-ARTICLE_SEARCH_KEY = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-BEST_SELLERS_KEY = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-COMMUNITY_KEY = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-TIMES_TAGS_KEY = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-TIMES_PEOPLE_KEY = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
 
 def fetch_data(url):
     data = urllib2.urlopen(url).read()
@@ -40,10 +34,9 @@ class TimesTags(NYT):
             'api-key': self.key
         })
         url = ''.join([self.baseURI, '?', reqarg])
-        print url
         data = fetch_data(url)
-        data = json.loads(data)
-        return data
+        payload = json.loads(data)
+        return payload
         
 class TimesPeople(NYT):
     """A wrapper around the NYTimes TimesPeople API
@@ -61,25 +54,39 @@ class TimesPeople(NYT):
         email_hash = hashlib.md5(email).hexdigest()
         url = self.baseURI+'%s/id.%s?api-key=%s'% (email_hash, self.response_format, self.key)
         data = fetch_data(url)
-        data = json.loads(data)
-        return data['results']['user_id']
+        payload = json.loads(data)
+        return payload['results']['user_id']
     
     def get_user_data(self, user_id, data_type):
         url = self.baseURI+'%s/%s.%s?api-key=%s'% (user_id, data_type, self.response_format, self.key)
         data = fetch_data(url)
-        data = json.loads(data)
-        return data['results']
+        payload = json.loads(data)
+        return payload['results']
 
 
 class ArticleSearch(NYT):
     """A wrapper around the NYTimes Article Search API
         
-        articles = ArticleSearch(ARTICLE_SEARCH_KEY)
-        terms = 'awesomesauce'
-        results = articles.search(terms, rank='oldest')
-        
-        See main() for more...
-        
+        nyt = ArticleSearch(ARTICLE_SEARCH_KEY)
+        terms = 'health care'
+        query_fields = {
+            'title': ['debate'],
+            'body': ['economy', '2009'],
+        }
+        query_facets = {
+            'per_facet':['OBAMA, BARACK'],
+            'des_facet':['UNITED STATES POLITICS AND GOVERNMENT','UNITED STATES ECONOMY'],
+        }
+        facets = ['des_facet','per_facet','geo_facet']
+        response_fields = ['body','byline','date','title','url','lead_paragraph','desk_facet']
+        results = nyt.search(
+                    terms,
+                    query_fields=query_fields,
+                    query_facets=query_facets,
+                    facets=facets,
+                    response_fields=response_fields,
+                    rank='oldest',
+                )
     """
     def __init__(self, key):
         super(ArticleSearch, self).__init__(key)
@@ -97,32 +104,5 @@ class ArticleSearch(NYT):
         url = ''.join([self.baseURI, '?', reqarg])
         print url
         data = fetch_data(url)
-        data = json.loads(data)
-        return data
-
-
-def main():
-    nyt = ArticleSearch(ARTICLE_SEARCH_KEY)
-    terms = 'banking'
-    query_fields = {
-        'title': ['economy'],
-        'body': ['stimulus package'],
-    }
-    query_facets = {
-        'per_facet':['OBAMA, BARACK'],
-        'des_facet':['UNITED STATES POLITICS AND GOVERNMENT','UNITED STATES ECONOMY'],
-    }
-    facets = ['des_facet','per_facet','geo_facet']
-    response_fields = ['body','byline','date','title','url','lead_paragraph','desk_facet']
-    q = nyt.search(
-                terms,
-                query_fields=query_fields,
-                query_facets=query_facets,
-                facets=facets,
-                response_fields=response_fields,
-                rank='newest',
-            )
-    print q
-
-if __name__ == "__main__":
-    main()
+        payload = json.loads(data)
+        return payload
